@@ -17,7 +17,7 @@ CLI_LOCK = CLI_PATH / "poetry.lock"
 
 LOCAL_DEPS = """
 [tool.poetry.dependencies]
-python = ">=3.9.21,<3.13"
+python = ">=3.9.21,<3.14"
 openbb-devtools = { path = "./extensions/devtools", develop = true, markers = "python_version >= '3.10'" }
 openbb-core = { path = "./core", develop = true }
 openbb-platform-api = { path = "./extensions/platform_api", develop = true }
@@ -25,6 +25,7 @@ openbb-platform-api = { path = "./extensions/platform_api", develop = true }
 openbb-benzinga = { path = "./providers/benzinga", develop = true }
 openbb-bls = { path = "./providers/bls", develop = true }
 openbb-cftc = { path = "./providers/cftc", develop = true }
+openbb-congress-gov = { path = "./providers/congress_gov", develop = true }
 openbb-econdb = { path = "./providers/econdb", develop = true }
 openbb-federal-reserve = { path = "./providers/federal_reserve", develop = true }
 openbb-fmp = { path = "./providers/fmp", develop = true }

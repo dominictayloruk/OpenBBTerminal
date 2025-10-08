@@ -75,6 +75,8 @@ uvicorn_settings = (
     SystemService().system_settings.python_settings.model_dump().get("uvicorn", {})
 )
 
+obb_headers = {"X-Backend-Type": "OpenBB Platform"}
+
 for key, value in uvicorn_settings.items():
     if key not in kwargs and key != "app" and value is not None:
         kwargs[key] = value
@@ -94,15 +96,12 @@ if not dont_filter and os.path.exists(WIDGET_SETTINGS):
 def check_for_platform_extensions(fastapi_app, widgets_to_exclude) -> list:
     """Check for data-processing Platform extensions and add them to the widget exclude filter."""
     to_check_for = ["econometrics", "quantitative", "technical"]
-    tags = (
-        [
-            d.get("name") if isinstance(d, dict) and d.get("name") else d
-            for d in fastapi_app.openapi_tags
-            if d and d in to_check_for
-        ]
-        if fastapi_app.openapi_tags
-        else []
-    )
+    openapi_tags = fastapi_app.openapi_tags or []
+    tags: list = []
+    for tag in openapi_tags:
+        if any(mod in tag.get("name", "") for mod in to_check_for):
+            tags.append(tag.get("name", ""))
+
     if tags and (any(f"openbb_{mod}" in sys.modules for mod in to_check_for)):
         api_prefix = SystemService().system_settings.api_settings.prefix
         for tag in tags:
@@ -114,7 +113,6 @@ def check_for_platform_extensions(fastapi_app, widgets_to_exclude) -> list:
 
 
 widget_exclude_filter = check_for_platform_extensions(app, widget_exclude_filter)
-
 openapi = app.openapi()
 
 # We don't need the current settings,
@@ -154,14 +152,15 @@ async def get_widgets():
     global FIRST_RUN  # noqa PLW0603  # pylint: disable=global-statement
     if FIRST_RUN is True:
         FIRST_RUN = False
-        return JSONResponse(content=widgets_json)
+        return JSONResponse(content=widgets_json, headers=obb_headers)
     if EDITABLE:
         return JSONResponse(
             content=get_widgets_json(
                 False, openapi, widget_exclude_filter, EDITABLE, WIDGETS_PATH
-            )
+            ),
+            headers=obb_headers,
         )
-    return JSONResponse(content=widgets_json)
+    return JSONResponse(content=widgets_json, headers=obb_headers)
 
 
 # If a custom implementation, you might want to override.
@@ -216,9 +215,9 @@ async def get_apps_json():
                     new_templates.append(template)
 
         if new_templates:
-            return JSONResponse(content=new_templates)
+            return JSONResponse(content=new_templates, headers=obb_headers)
 
-    return JSONResponse(content=[])
+    return JSONResponse(content=[], headers=obb_headers)
 
 
 if AGENTS_PATH:
@@ -229,8 +228,8 @@ if AGENTS_PATH:
         if os.path.exists(AGENTS_PATH):
             with open(AGENTS_PATH) as f:
                 agents = json.load(f)
-            return JSONResponse(content=agents)
-        return JSONResponse(content=[])
+            return JSONResponse(content=agents, headers=obb_headers)
+        return JSONResponse(content=[], headers=obb_headers)
 
 
 def launch_api(**_kwargs):  # noqa PRL0912
